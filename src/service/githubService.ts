@@ -7,7 +7,8 @@ export const pushCommit = async () => {
     const octokit = await credentials.getOctokit();
     const userInfo = await octokit.users.getAuthenticated();
     const owner = userInfo.data.login;
-    const repo = 'code-tracking';
+    const config = vscode.workspace.getConfiguration('devtrack');
+    const repo = config.get<string>('repoName') || 'code-tracking';
 
     // Create the repository if it doesn't exist
     try {

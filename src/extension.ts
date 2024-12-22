@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Credentials } from './credentials';
 import { pushCommit } from './service/githubService';
+import * as jsdiff from 'diff';
 
 export async function activate(context: vscode.ExtensionContext) {
   const credentials = new Credentials();
@@ -14,31 +15,70 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const startTracking = vscode.commands.registerCommand('devtrack.startTracking', async () => {
     try {
-      const octokit = await credentials.getOctokit();
-      const userInfo = await octokit.users.getAuthenticated();
-      const repoOwner = userInfo.data.login; 
       const config = vscode.workspace.getConfiguration('devtrack');
-      const repoName = config.get<string>('repoName') || 'code-tracking';
+      const trackedExtensions = [
+        'ts', 'js', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'css', 'scss', 'html', 'jsx', 'tsx', 'vue', 'php', 'rb', 'go', 'rs', 'swift', 'md', 'json', 'yml', 'yaml'
+      ];
+      const excludePatterns = config.get<string[]>('exclude', []);
+      const commitFrequency = config.get<number>('commitFrequency', 30) * 60000;
 
-      const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/commits`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `Bearer ${credentials.token}` 
+      const files = await vscode.workspace.findFiles('**/*', `{${excludePatterns.join(',')}}`);
+      const fileStatuses = await Promise.all(files
+        .filter(file => trackedExtensions.includes(file.fsPath.split('.').pop() || ''))
+        .map(async file => {
+          const document = await vscode.workspace.openTextDocument(file);
+          return {
+            path: file.fsPath,
+            saved: !document.isDirty,
+            content: document.getText()
+          };
+        }));
+
+      const panel = vscode.window.createWebviewPanel(
+        'fileStatus',
+        'File Status',
+        vscode.ViewColumn.One,
+        {}
+      );
+
+      const fileStatusHtml = fileStatuses.map(fileStatus => {
+        return `<p>File: ${fileStatus.path}, Saved: ${fileStatus.saved}</p><pre>${fileStatus.content}</pre>`;
+      }).join('');
+
+      panel.webview.html = `<html><body>${fileStatusHtml}</body></html>`;
+
+      setInterval(async () => {
+        const updatedFiles = await vscode.workspace.findFiles('**/*', `{${excludePatterns.join(',')}}`);
+        const updatedFileStatuses = await Promise.all(updatedFiles
+          .filter(file => trackedExtensions.includes(file.fsPath.split('.').pop() || ''))
+          .map(async file => {
+            const document = await vscode.workspace.openTextDocument(file);
+            return {
+              path: file.fsPath,
+              saved: !document.isDirty,
+              content: document.getText()
+            };
+          }));
+
+        const changes = updatedFileStatuses.filter(updatedFile => {
+          const originalFile = fileStatuses.find(file => file.path === updatedFile.path);
+          return originalFile && originalFile.content !== updatedFile.content;
+        });
+
+        if (changes.length > 0) {
+          changes.forEach(file => {
+            const originalFile = fileStatuses.find(f => f.path === file.path);
+            const diff = jsdiff.createPatch(file.path, originalFile?.content || '', file.content);
+            console.log(`File: ${file.path}`);
+            console.log(`Diff:\n${diff}`);            
+          });
+          vscode.window.showInformationMessage(`Changed files: ${changes.map(file => file.path).join(', ')}`);
+        } else {
+          vscode.window.showInformationMessage('No files were changed.');
         }
-      });
-
-      if (response.ok) {
-        const commits = await response.json();
-        console.log(commits);
-        vscode.window.showInformationMessage('Started tracking repository!');
-      } else {
-        console.error('Failed to fetch commits:', response.status, response.statusText);
-        vscode.window.showErrorMessage(`Failed to fetch commits: ${response.status} ${response.statusText}`);
-      }
+      }, commitFrequency);
     } catch (error) {
-      console.error("Error during the tracking operation:", error);
-      vscode.window.showErrorMessage(`Failed to start tracking the repository: ${error}`);
+      vscode.window.showErrorMessage(`Error starting tracking: ${error}`);
     }
   });
 
@@ -49,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     auth,
     startTracking,
-    createCommit
+    createCommit,
   );
 }
 
