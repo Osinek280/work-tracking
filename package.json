@@ -1,0 +1,90 @@
+{
+	"name": "github-authentication-sample",
+	"displayName": "github-authentication-sample",
+	"description": "Example of using the GitHub Authentication Provider",
+	"version": "0.0.1",
+	"publisher": "vscode-samples",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"private": true,
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.getGitHubUser",
+				"title": "Get GitHub User",
+				"category": "GitHub Authentication Sample"
+			},
+			{
+				"command": "devtrack.startTracking",
+				"title": "DevTrack: Start Tracking"
+			},
+			{
+				"command": "devtrack.createCommit",
+				"title": "DevTrack: Commit"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "DevTrack Configuration",
+			"properties": {
+				"devtrack.repoName": {
+					"type": "string",
+					"default": "code-tracking",
+					"description": "Name of the GitHub repository to store tracking logs."
+				},
+				"devtrack.commitFrequency": {
+					"type": "number",
+					"default": 30,
+					"description": "How often (in minutes) to commit your coding history."
+				},
+				"devtrack.confirmBeforeCommit": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show a confirmation dialog before each automatic commit."
+				},
+				"devtrack.exclude": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "List of glob patterns to exclude from tracking."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/diff": "^6.0.0",
+		"@types/node": "^20",
+		"@types/node-fetch": "^2.6.12",
+		"@types/vscode": "1.74.0",
+		"eslint": "^9.13.0",
+		"typescript": "^5.7.2",
+		"typescript-eslint": "^8.16.0"
+	},
+	"dependencies": {
+		"@himenon/github-api-create-commit": "^2.1.3",
+		"@octokit/rest": "^18.0.0",
+		"diff": "^7.0.0",
+		"minimatch": "^10.0.1"
+	}
+}
