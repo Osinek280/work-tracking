@@ -16,7 +16,9 @@
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [],
+	"activationEvents": [
+		"workspaceContains:**/*"
+	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
@@ -24,10 +26,6 @@
 				"command": "extension.getGitHubUser",
 				"title": "Get GitHub User",
 				"category": "GitHub Authentication Sample"
-			},
-			{
-				"command": "devtrack.startTracking",
-				"title": "DevTrack: Start Tracking"
 			},
 			{
 				"command": "devtrack.createCommit",
@@ -41,6 +39,9 @@
 		"configuration": {
 			"type": "object",
 			"title": "DevTrack Configuration",
+			"env": {
+				"DEBUG": "true"
+			},
 			"properties": {
 				"devtrack.repoName": {
 					"type": "string",
@@ -62,7 +63,7 @@
 					"items": {
 						"type": "string"
 					},
-					"default": [],
+					"default": ["**/node_modules/**", "**/.git/**", "**/.vscode/**", "**/out/**", "**/dist/**", "**/build/**", "**/coverage/**", "**/temp/**", "**/tmp"],
 					"description": "List of glob patterns to exclude from tracking."
 				}
 			}
@@ -90,6 +91,7 @@
 		"@octokit/rest": "^18.0.0",
 		"dewy": "^0.1.0",
 		"diff": "^7.0.0",
+		"groq-sdk": "^0.9.1",
 		"minimatch": "^10.0.1"
 	}
 }

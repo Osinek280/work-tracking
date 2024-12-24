@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { Credentials } from '../credentials';
 
-export const pushCommit = async () => {
+export const pushCommit = async ( commitMessage: string, diff: string ) => {
   const credentials = new Credentials();
   try {
     const octokit = await credentials.getOctokit();
@@ -68,7 +68,6 @@ export const pushCommit = async () => {
     // Prepare new log entry
     const timestamp = new Date().toISOString();
     const filePath = 'src/example/file.ts'; // Replace with actual file path
-    const commitMessage = 'Your commit message'; // Replace with actual commit message
     const user = owner;
 
     const newLogEntry = `| ${timestamp} | ${filePath} | ${commitMessage} | ${user} |\n`;
@@ -89,6 +88,12 @@ export const pushCommit = async () => {
           type: 'blob',
           content: readmeContent,
         },
+        {
+          path: 'src/example/file.ts',
+          mode: '100644',
+          type: 'blob',
+          content: diff,
+        }
       ],
     });
 
